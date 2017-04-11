@@ -1,5 +1,6 @@
 package com.fogok.yandextranslater;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -40,12 +41,31 @@ public class TabSelect extends AppCompatActivity {
         // Инициализируем и настраиваем tabLayout
         tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                tab.getCustomView().setAlpha(1f);
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+                tab.getCustomView().setAlpha(0.4f);
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+
+            }
+        });
+
+
         createTabIcons();   //добавляем кастомные лайауты с векторными иконками на вкладки
     }
 
     private void createTabIcons() {
         final ImageView tabOne = (ImageView) LayoutInflater.from(this).inflate(R.layout.custom_tab, null);
         tabOne.setImageResource(R.drawable.ic_onetab);
+        tabOne.setAlpha(1f);
         tabLayout.getTabAt(0).setCustomView(tabOne);
 
         final ImageView tabTwo = (ImageView) LayoutInflater.from(this).inflate(R.layout.custom_tab, null);
