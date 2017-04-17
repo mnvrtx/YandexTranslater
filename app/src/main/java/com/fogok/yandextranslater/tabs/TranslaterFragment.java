@@ -28,7 +28,9 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.fogok.yandextranslater.R;
+import com.fogok.yandextranslater.TabSelect;
 import com.fogok.yandextranslater.services.YandexApiService;
+import com.fogok.yandextranslater.sugarlitesql.HistoryObject;
 import com.fogok.yandextranslater.utils.MapUtil;
 
 import org.json.JSONArray;
@@ -46,22 +48,21 @@ public class TranslaterFragment extends Fragment {
 
     private final String TAG = "TranslateFragmentLog";
 
+    private Animation reversLangBAnimation = null;     //анимация стрелки смены языка
+    private EditText textEdit = null;  //поле для ввода фразы перевода
 
-    private Animation reversLangBAnimation;     //анимация стрелки смены языка
-    private EditText textEdit;  //поле для ввода фразы перевода
+    private Intent intentYandexApiService = null;
+    private TextView textOut = null, secondTextOut = null, countTextChars = null;
+    private ProgressBar translateIndicator = null;
 
-    private Intent intentYandexApiService;
-    private TextView textOut, secondTextOut, countTextChars;
-    private ProgressBar translateIndicator;
-
-    private Spinner fromLangSpinner, toLangSpinner;
-    private ArrayAdapter<String> fromLangAdapter, toLangAdapter;
-    private HashMap<String, String> langsTranslatePossible;
+    private Spinner fromLangSpinner = null, toLangSpinner = null;
+    private ArrayAdapter<String> fromLangAdapter = null, toLangAdapter = null;
+    private HashMap<String, String> langsTranslatePossible = null;
     private ArrayList<String> langsDictPossible = new ArrayList<>();
 
     private ArrayList<String> spinnerDataLangs = new ArrayList<>();
 
-    private TranslateResponseReceiver translateResponseReceiver;
+    private TranslateResponseReceiver translateResponseReceiver = null;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -82,6 +83,7 @@ public class TranslaterFragment extends Fragment {
         if (savedInstanceState == null){
             requestLangsList();
         }else{
+            //noinspection unchecked
             langsTranslatePossible = (HashMap<String, String>) savedInstanceState.getSerializable(langsTranslatePossibleHashMap);
             spinnerDataLangs.addAll(langsTranslatePossible.keySet());    //добавляем в лист(spinnerDataLangs) все языки
             langsDictPossible = savedInstanceState.getStringArrayList(langsDictPossibleList);   //на какие языки можно делать доп. вар. перевода
@@ -97,14 +99,12 @@ public class TranslaterFragment extends Fragment {
                 .putExtra(YandexApiService.REQUEST_ACTION, YandexApiService.RequestActions.GET_LANGUAGES_TO_DICT_IS_POSSIBLE));
     }
 
-
-
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         View view =
                 inflater.inflate(R.layout.translater_f, container, false);
-        //метод onSaveInstanceState не срабатывает при onDestroyView, будет свой bundle
+        //метод onSaveInstanceState не срабатывает при onDestroyView, будет свой argumentsBundle
         initAllLayoutVars(view, savedInstanceState);    //инициализируем все переменные, которые связаны с layout
         Log.d(TAG, "onCreateView");
         return view;
@@ -122,7 +122,6 @@ public class TranslaterFragment extends Fragment {
                 reversLangs(v);
             }
         });
-
 
         //инициализируем progressBar, который будет отображать, переводится ли какой-то текст или нет
         translateIndicator = (ProgressBar) v.findViewById(R.id.translateIndicator);
@@ -189,7 +188,9 @@ public class TranslaterFragment extends Fragment {
             private final long afterChangeDelay = 800; // milliseconds
             @Override
             public void afterTextChanged(Editable editable) {
-                if (!lockFirstActivate){
+                textOut.setText("");
+                secondTextOut.setText("");
+                if (!lockFirstActivate && !textEdit.getText().toString().replace(" ", "").equals("")){
                     translateIndicator.setVisibility(View.VISIBLE);     //говорим пользователю, что мы запускаем процесс перевода
                     timer.cancel();
                     timer = new Timer();
@@ -202,8 +203,11 @@ public class TranslaterFragment extends Fragment {
                             },
                             afterChangeDelay
                     );
-                }else
+                }else{
+                    translateIndicator.setVisibility(View.INVISIBLE);     //говорим пользователю, что мы не можем перевести, т.к. либо строка пустая, либо мы уже совершили перевод
+                    timer.cancel();
                     lockFirstActivate = false;
+                }
 
                 countTextChars.setText(Uri.encode(editable.toString()).length() + "/10000");
             }
@@ -244,10 +248,11 @@ public class TranslaterFragment extends Fragment {
         translateAction(); //совершаем перевод
     }
 
+    private String finalStringTranlate;
     private void translateAction(){
         String fromLang = langsTranslatePossible.get(fromLangSpinner.getSelectedItem().toString());
         String toLang = langsTranslatePossible.get(toLangSpinner.getSelectedItem().toString());
-        String finalStringTranlate = fromLang + "-" + toLang;
+        finalStringTranlate = fromLang + "-" + toLang;
         getContext().startService(intentYandexApiService
                 .putExtra(YandexApiService.REQUEST_ACTION, YandexApiService.RequestActions.GET_TRANSLATE_RESPONSE)
                 .putExtra(YandexApiService.LANG_STR_DIRECTION, finalStringTranlate)
@@ -267,24 +272,44 @@ public class TranslaterFragment extends Fragment {
     public class TranslateResponseReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String result = intent
-                    .getStringExtra(YandexApiService.EXTRA_KEY_RESPONSE);
+            YandexApiService.RequestActions requestAction = (YandexApiService.RequestActions) intent.getSerializableExtra(YandexApiService.REQUEST_ACTION);
+            String result = "";
+            if (requestAction != YandexApiService.RequestActions.HISTORY_OPEN)
+                result = intent
+                        .getStringExtra(YandexApiService.EXTRA_KEY_RESPONSE);
 
 
-            switch ((YandexApiService.RequestActions) intent.getSerializableExtra(YandexApiService.REQUEST_ACTION)){
+            switch (requestAction){
+                case HISTORY_OPEN:
+                    HistoryObject openedHistoryObject = intent.getParcelableExtra(YandexApiService.EXTRA_KEY_RESPONSE);
+                    lockFirstActivate = true; // если мы ставим текст в editText, значит блокируем первое срабатывание textWatcher
+                    textEdit.setText(openedHistoryObject.getFromLangText());
+                    textOut.setText(openedHistoryObject.getToLangText());
+                    secondTextOut.setText(getSpannedFromHtml(openedHistoryObject.getSecondOutText()));
+                    String[] langDirections = openedHistoryObject.getLangDirection().split("-");
+                    int fromIndex = new ArrayList<>(langsTranslatePossible.values()).indexOf(langDirections[0]);   //изначально выбранный язык с которого будет перевод
+                    int toIndex = new ArrayList<>(langsTranslatePossible.values()).indexOf(langDirections[1]);   //изначально выбранный язык на который будет перевод
+
+                    lastFromSpinnerSelect = fromIndex;
+                    fromLangSpinner.setSelection(fromIndex);
+
+                    lastToSpinnerSelect = toIndex;
+                    toLangSpinner.setSelection(toIndex);
+
+                    ((TabSelect)getActivity()).getTabLayout().getTabAt(0).select();
+
+                    break;
                 case GET_DICT_RESPONSE:
                     if (!result.equals("")){
                         try {
                             JSONArray dictArticles = new JSONObject(result).getJSONArray("def");
                             if (dictArticles.length() != 0){   //если мы получили хотя бы одну словарную статью
                                 String htmlData = convertDicResultToNormal(dictArticles.getJSONObject(0));
-                                Spanned spannedText;
-                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N)
-                                    spannedText = Html.fromHtml(htmlData,Html.FROM_HTML_MODE_LEGACY);
-                                else
-                                    spannedText = Html.fromHtml(htmlData);
 
-                                secondTextOut.setText(revertSpanned(spannedText));
+                                secondTextOut.setText(revertSpanned(getSpannedFromHtml(htmlData)));
+
+                                TabSelect.getHistoryObjects().get(TabSelect.getHistoryObjects().size() - 1)
+                                        .setSecondOutText(htmlData);
 
                             }else
                                 secondTextOut.setText("");
@@ -326,28 +351,46 @@ public class TranslaterFragment extends Fragment {
                     langsTranslatePossible = (HashMap<String, String>) MapUtil.sort(langsTranslatePossible);
                     spinnerDataLangs.addAll(langsTranslatePossible.keySet());    //добавляем в лист(spinnerDataLangs) все языки
 
-                    int fromIndex = new ArrayList<>(langsTranslatePossible.values()).indexOf("en");   //изначально выбранный язык с которого будет перевод
-                    int toIndex = new ArrayList<>(langsTranslatePossible.values()).indexOf("ru");   //изначально выбранный язык на который будет перевод
+                    int ffromIndex = new ArrayList<>(langsTranslatePossible.values()).indexOf("en");   //изначально выбранный язык с которого будет перевод
+                    int ttoIndex = new ArrayList<>(langsTranslatePossible.values()).indexOf("ru");   //изначально выбранный язык на который будет перевод
 
                     //вставка
                     fromLangAdapter.notifyDataSetChanged();
-                    lastFromSpinnerSelect = fromIndex;
-                    fromLangSpinner.setSelection(fromIndex);
+                    lastFromSpinnerSelect = ffromIndex;
+                    fromLangSpinner.setSelection(ffromIndex);
 
                     toLangAdapter.notifyDataSetChanged();
-                    lastToSpinnerSelect = toIndex;
-                    toLangSpinner.setSelection(toIndex);
+                    lastToSpinnerSelect = ttoIndex;
+                    toLangSpinner.setSelection(ttoIndex);
 
                     break;
                 case GET_TRANSLATE_RESPONSE:
                     translateIndicator.setVisibility(View.INVISIBLE);    //говорим пользователю, что мы завершили перевод
-                    textOut.setText(result);
+                    textOut.setText(result.trim());     //trim - обрезаем лишние пробелы
                     secondTextOut.setText("");  ///обновляем доп. вар. перевода
+
+                    if (!textEdit.getText().equals("")) {     //обновляем историю
+                        HistoryObject historyObject = new HistoryObject(
+                                "0",
+                                textEdit.getText().toString(),
+                                textOut.getText().toString(),
+                                "",
+                                finalStringTranlate.toUpperCase()
+                        );
+                        historyObject.save();
+                        TabSelect.getHistoryObjects().add(historyObject);
+                    }
                     break;
             }
 
             Log.d(TAG, "onReceive: " + result);
         }
+    }
+
+    private Spanned getSpannedFromHtml(String htmlData){
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N)
+            return Html.fromHtml(htmlData,Html.FROM_HTML_MODE_LEGACY);
+        return Html.fromHtml(htmlData);
     }
 
     private String convertDicResultToNormal(JSONObject dicResult){

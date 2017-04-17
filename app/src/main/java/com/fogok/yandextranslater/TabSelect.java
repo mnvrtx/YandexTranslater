@@ -1,6 +1,5 @@
 package com.fogok.yandextranslater;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -8,9 +7,11 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.widget.ImageView;
 
+import com.fogok.yandextranslater.sugarlitesql.HistoryObject;
 import com.fogok.yandextranslater.tabs.FavoritesAndHistoryFragment;
 import com.fogok.yandextranslater.tabs.SettingsFragment;
 import com.fogok.yandextranslater.tabs.TranslaterFragment;
@@ -20,23 +21,58 @@ import java.util.List;
 
 public class TabSelect extends AppCompatActivity {
 
-    private SectionsPagerAdapter mSectionsPagerAdapter;
-    private ViewPager mViewPager;
-    private TabLayout tabLayout;
+    public static final String HISTORY_OBJECTS_KEY = "HISTORY_OBJECTS_KEY";
+    public static final String FAVORITE_OBJECTS_KEY = "FAVORITE_OBJECTS_KEY";
+    public static final String TAG = "TabSelect";
+
+    private SectionsPagerAdapter mSectionsPagerAdapter = null;
+    private ViewPager mViewPager = null;
+    private TabLayout tabLayout = null;
+
+    private static ArrayList<HistoryObject> historyObjects = null;    //объекты истории
+    private static ArrayList<HistoryObject> favoriteObjects = null;   //ссылки на historyObjects, с параметром isFavorite
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tab_select);
+        Log.d(TAG, "onCreate");
+
+//        if (savedInstanceState == null){
+//
+//        }else{
+//            historyObjects = savedInstanceState.getParcelableArrayList(HISTORY_OBJECTS_KEY);
+//            favoriteObjects = savedInstanceState.getParcelableArrayList(FAVORITE_OBJECTS_KEY);
+//        }
+
 
         // Создаём адаптер, который будет возвращать для viewPager нужный fragment
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
-        addFragmentsToAdapter();    // Добавляем в адаптер все нужные layout
+        addFragmentsToAdapter(savedInstanceState);    // Добавляем в адаптер все нужные layout
 
 
         // Создаём и настраиваем viewPager, который будет отображать нужный fragment
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
+        mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                Fragment fragment = getSupportFragmentManager().getFragments().get(position);
+                if (fragment instanceof FavoritesAndHistoryFragment)
+                    ((FavoritesAndHistoryFragment) fragment).notifyDataSetChanged();
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
 
         // Инициализируем и настраиваем tabLayout
         tabLayout = (TabLayout) findViewById(R.id.tabs);
@@ -56,8 +92,9 @@ public class TabSelect extends AppCompatActivity {
             public void onTabReselected(TabLayout.Tab tab) {
 
             }
-        });
 
+
+        });
 
         createTabIcons();   //добавляем кастомные лайауты с векторными иконками на вкладки
     }
@@ -77,13 +114,61 @@ public class TabSelect extends AppCompatActivity {
         tabLayout.getTabAt(2).setCustomView(tabThree);
     }
 
-    private void addFragmentsToAdapter(){
-        mSectionsPagerAdapter.addFrag(new TranslaterFragment(), "1");
-        mSectionsPagerAdapter.addFrag(new FavoritesAndHistoryFragment(), "2");
-        mSectionsPagerAdapter.addFrag(new SettingsFragment(), "3");
+    public TabLayout getTabLayout() {
+        return tabLayout;
     }
 
-    class SectionsPagerAdapter extends FragmentStatePagerAdapter {
+    private Fragment translaterFragment;
+    private Fragment favoritesAndHistoryFragment;
+    private Fragment settingsFragment;
+
+    private void addFragmentsToAdapter(Bundle saveInstanceState){
+        translaterFragment = new TranslaterFragment();
+        favoritesAndHistoryFragment = new FavoritesAndHistoryFragment();
+        settingsFragment = new SettingsFragment();
+
+        Bundle bundle = new Bundle();
+        bundle.putParcelableArrayList(HISTORY_OBJECTS_KEY, historyObjects);
+        bundle.putParcelableArrayList(FAVORITE_OBJECTS_KEY, favoriteObjects);
+
+        translaterFragment.setArguments(bundle);
+        favoritesAndHistoryFragment.setArguments(bundle);
+
+        mSectionsPagerAdapter.addFrag(translaterFragment, "1");
+        mSectionsPagerAdapter.addFrag(favoritesAndHistoryFragment, "2");
+        mSectionsPagerAdapter.addFrag(settingsFragment, "3");
+    }
+
+    public static ArrayList<HistoryObject> getFavoriteObjects() {
+        Log.d("TEST", "getFavoriteObjects");
+        if (favoriteObjects == null){
+            favoriteObjects = new ArrayList<>();
+            //favorite object должен содержать ссылки на history objects, поэтом инициализируем его так
+            for (int i = 0; i < historyObjects.size(); i++) {
+                if (historyObjects.get(i).isFavorite())
+                    favoriteObjects.add(historyObjects.get(i));
+            }
+        }
+        return favoriteObjects;
+    }
+
+    public static ArrayList<HistoryObject> getHistoryObjects() {
+        Log.d("TEST", "getHistoryObjects");
+        if (historyObjects == null){
+            historyObjects = new ArrayList<>(HistoryObject.listAll(HistoryObject.class));
+        }
+        return historyObjects;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d("TEST", "onDestroy");
+        favoriteObjects = null;
+        historyObjects = null;
+    }
+
+    private class SectionsPagerAdapter extends FragmentStatePagerAdapter {
 
         private static final int countItemsInTabs = 3;
         private final List<Fragment> mFragmentList = new ArrayList<>(countItemsInTabs);
@@ -113,6 +198,7 @@ public class TabSelect extends AppCompatActivity {
             return mFragmentTitleList.get(position);
         }
     }
+
 
 
 }

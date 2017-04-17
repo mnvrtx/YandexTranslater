@@ -6,6 +6,10 @@ import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.fogok.yandextranslater.TabSelect;
+import com.fogok.yandextranslater.sugarlitesql.HistoryObject;
+import com.fogok.yandextranslater.tabs.favorites_and_history.History;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -15,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 
 public class YandexApiService extends IntentService {
 
@@ -34,54 +39,50 @@ public class YandexApiService extends IntentService {
 
 
     public enum RequestActions{
-        //  возвращаем доступные языки для перевода, возвращаем ответ перевода, возвращаем доступные языки для доп. вариантов перевода, возвращаем доп. вар. перевода
-        GET_LANGUAGES_TO_TRANSLATE_IS_POSSIBLE, GET_TRANSLATE_RESPONSE, GET_LANGUAGES_TO_DICT_IS_POSSIBLE, GET_DICT_RESPONSE
+        //  возвращаем доступные языки для перевода, возвращаем ответ перевода, возвращаем доступные языки для доп. вариантов перевода, возвращаем доп. вар. перевода, открываем перевод из истории
+        GET_LANGUAGES_TO_TRANSLATE_IS_POSSIBLE, GET_TRANSLATE_RESPONSE, GET_LANGUAGES_TO_DICT_IS_POSSIBLE, GET_DICT_RESPONSE, HISTORY_OPEN
     }
 
     public YandexApiService() {
         super("com.fogok.yandexapi");
-        Log.d(TAG, "com.fogok.yandexapi");
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "onCreate");
     }
 
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
-        Log.d(TAG, "translateAction");
 
+        assert intent != null;
         RequestActions requestAction = (RequestActions) intent.getSerializableExtra(REQUEST_ACTION);
 
         String responseTranslate = "";  //перевод
+        String targetText = intent.getStringExtra(TARGET_TEXT_STR);     //текст, который надо перевести
+        String langDir = intent.getStringExtra(LANG_STR_DIRECTION);     //направление перевода
+
+        HistoryObject historyObject = isExistInHistoryObjects(targetText, langDir);
+        boolean isExistInHistoryObjects = historyObject != null;
+        if (isExistInHistoryObjects)
+            requestAction = RequestActions.HISTORY_OPEN;
 
         Log.d(TAG, requestAction.name());
 
         switch (requestAction){
             case GET_DICT_RESPONSE:
-                if (!intent.getStringExtra(TARGET_TEXT_STR).equals("")) {    //если в строке ничего нет, то ничего не делаем
-                    responseTranslate = postRequestGetMoreTranslatedJSON(intent.getStringExtra(TARGET_TEXT_STR), intent.getStringExtra(LANG_STR_DIRECTION));
-                }
+                if (!targetText.equals(""))    //если в строке ничего нет, то ничего не делаем
+                    responseTranslate = postRequestGetMoreTranslatedJSON(targetText, langDir);
+                break;
+            case GET_TRANSLATE_RESPONSE:
+                if (!targetText.equals(""))    //если в строке ничего нет, то ничего не делаем
+                    responseTranslate = parseJSONTranslatedResponse(postRequestGetTranslatedJSON(targetText, langDir));
                 break;
             case GET_LANGUAGES_TO_DICT_IS_POSSIBLE:
                 responseTranslate = postRequestGetDictLangsJSON();
                 break;
             case GET_LANGUAGES_TO_TRANSLATE_IS_POSSIBLE:
                 responseTranslate = postRequestGetLangsJSON();
-                break;
-            case GET_TRANSLATE_RESPONSE:
-                if (!intent.getStringExtra(TARGET_TEXT_STR).equals("")){    //если в строке ничего нет, то ничего не делаем
-                    try {
-                        String responseStringData = postRequestGetTranslatedJSON(intent.getStringExtra(TARGET_TEXT_STR), intent.getStringExtra(LANG_STR_DIRECTION));
-                        JSONObject jsonAllResponseData = new JSONObject(responseStringData);
-                        JSONArray textData = jsonAllResponseData.getJSONArray("text");
-                        responseTranslate = textData.getString(0);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
                 break;
         }
 
@@ -91,11 +92,51 @@ public class YandexApiService extends IntentService {
         responseIntent
                 .setAction(ACTION_YANDEXAPISERVICE)
                 .addCategory(Intent.CATEGORY_DEFAULT)
-                .putExtra(REQUEST_ACTION, requestAction)
-                .putExtra(EXTRA_KEY_RESPONSE, responseTranslate);
+                .putExtra(REQUEST_ACTION, requestAction);
+
+        if (isExistInHistoryObjects)
+            responseIntent.putExtra(EXTRA_KEY_RESPONSE, historyObject);
+        else
+            responseIntent.putExtra(EXTRA_KEY_RESPONSE, responseTranslate);
+
 
 
         sendBroadcast(responseIntent);
+    }
+
+
+    /**
+     * Превращаем ответ JSON (перевод) в читабельный вид
+     * @param responseStringData
+     * @return Читабельный вид ответа
+     */
+    private String parseJSONTranslatedResponse(String responseStringData){
+        try {
+            JSONArray textData = new JSONObject(responseStringData).getJSONArray("text");
+            return textData.getString(0);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+
+    /**
+     * Смотрим, есть ли то, что нам нужно перевести в истории, и если есть - возвращаем HistoryObject
+     * @param text текст, который мы должны проверить
+     * @param langDir направление перевода
+     * @return HistoryObject или null
+     */
+    @Nullable
+    private HistoryObject isExistInHistoryObjects(String text, String langDir){
+        if (text != null && langDir != null){
+            ArrayList<HistoryObject> historyObjects = TabSelect.getHistoryObjects();
+            for (HistoryObject historyObject : historyObjects)
+                if (historyObject.getLangDirection().toLowerCase().equals(langDir))  //если направление перевода совпадает
+                    if (historyObject.getFromLangText().equals(text))  //если совпадает строка, которую мы переводим со строкой, которая уже есть в истории
+                        return historyObject;
+        }
+        return null;
     }
 
 
@@ -215,6 +256,5 @@ public class YandexApiService extends IntentService {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "onDestroy");
     }
 }
