@@ -13,4 +13,7 @@
     <string name="you_sure_delete_element">Вы уверены, что хотите удалить элемент</string>
     <string name="yes">Да</string>
     <!--FahAdapter-->
+
+    <string name="transl_license">Переведено сервисом <a href="http://translate.yandex.ru/">"Яндекс.Переводчик"</a></string>
+    <string name="dict_license">Реализовано с помощью сервиса <a href="http://api.yandex.ru/dictionary/">"API Яндекс.Словарь"</a></string>
 </resources>

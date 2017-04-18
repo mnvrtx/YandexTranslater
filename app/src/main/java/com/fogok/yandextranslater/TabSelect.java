@@ -10,9 +10,11 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.fogok.yandextranslater.sugarlitesql.HistoryObject;
@@ -46,6 +48,10 @@ public class TabSelect extends AppCompatActivity {
             Toast.makeText(this, R.string.requiredNet, Toast.LENGTH_LONG).show();
             finish();
         }
+
+        //Делаем ссылки на сервисы яндекс кликабельными
+        ((TextView) findViewById(R.id.TranslLicense)).setMovementMethod(LinkMovementMethod.getInstance());
+        ((TextView) findViewById(R.id.DictLicense)).setMovementMethod(LinkMovementMethod.getInstance());
 
         // Создаём адаптер, который будет возвращать для viewPager нужный fragment
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
