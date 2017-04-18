@@ -161,7 +161,8 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
                 if (lastFromSpinnerSelect == i)
                     return;
                 lastFromSpinnerSelect = i;
-                translateAction(); //совершаем перевод
+                if (isEditTextNormalLook())
+                    translateAction(); //совершаем перевод
                 Log.d(TAG, "spinnerItemSelect");
             }
             @Override
@@ -174,7 +175,8 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
                 if (lastToSpinnerSelect == i)
                     return;
                 lastToSpinnerSelect = i;
-                translateAction(); //совершаем перевод
+                if (isEditTextNormalLook())
+                    translateAction(); //совершаем перевод
                 Log.d(TAG, "spinnerItemSelect");
             }
             @Override
@@ -199,7 +201,7 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
             public void afterTextChanged(Editable editable) {
                 textOut.setText("");
                 secondTextOut.setText("");
-                if (!lockFirstActivate && !textEdit.getText().toString().replace(" ", "").equals("")){
+                if (!lockFirstActivate && isEditTextNormalLook()){
                     translateIndicator.setVisibility(View.VISIBLE);     //говорим пользователю, что мы запускаем процесс перевода
                     timer.cancel();
                     timer = new Timer();
@@ -236,6 +238,14 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
             secondTextOut.setText(savedInstanceState.getCharSequence(secondTextOutText));
     }
 
+    /**
+     * Проверяем, в editText есть что-то, кроме пробелов или нет
+     * @return true - если есть, false - если нет
+     */
+    private boolean isEditTextNormalLook(){
+        return !textEdit.getText().toString().replace(" ", "").equals("");
+    }
+
     @Override
     public void onClick(View view) {
         switch (view.getId()){
@@ -254,7 +264,8 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
                 textEdit.setText(textOut.getText());
                 textOut.setText("");
 
-                translateAction(); //совершаем перевод
+                if (isEditTextNormalLook())
+                    translateAction(); //совершаем перевод
                 break;
             case R.id.clearEditText:
                 textEdit.setText("");
@@ -389,7 +400,6 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
 
     }
 
-
     /**
      * Тут все манипуляции с данными
      */
@@ -503,21 +513,23 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
                 case GET_TRANSLATE_RESPONSE:
                     //region Если перевод получен с интернета - сработает этот блок, иначе сработает блок HISTORY_OPEN.
                     translateIndicator.setVisibility(View.INVISIBLE);    //говорим пользователю, что мы завершили перевод
-                    textOut.setText(result.trim());     //trim - обрезаем лишние пробелы
-                    secondTextOut.setText("");  ///обновляем доп. вар. перевода
+                    if (!result.equals("")){
+                        textOut.setText(result.trim());     //trim - обрезаем лишние пробелы
+                        secondTextOut.setText("");  ///обновляем доп. вар. перевода
 
-                    HistoryObject historyObject = new HistoryObject(
-                            HistoryObject.NOFAVORITE,
-                            textEdit.getText().toString(),
-                            textOut.getText().toString(),
-                            "",
-                            finalStringTranlate.toUpperCase()
-                    );
+                        HistoryObject historyObject = new HistoryObject(
+                                HistoryObject.NOFAVORITE,
+                                textEdit.getText().toString(),
+                                textOut.getText().toString(),
+                                "",
+                                finalStringTranlate.toUpperCase()
+                        );
 
-                    historyObject.save();
-                    TabSelect.getHistoryObjects().add(historyObject);
+                        historyObject.save();
+                        TabSelect.getHistoryObjects().add(historyObject);
 
-                    currentHistoryObject = historyObject;
+                        currentHistoryObject = historyObject;
+                    }
                     //endregion
                     break;
             }
