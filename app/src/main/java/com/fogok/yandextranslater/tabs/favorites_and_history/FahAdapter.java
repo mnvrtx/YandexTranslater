@@ -67,6 +67,7 @@ public class FahAdapter extends MatchableRVArrayAdapter<HistoryObject, FahAdapte
             isFavorite.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+
                     HistoryObject historyObject = getItem(getAdapterPosition());
 
                     if (isHistory){
@@ -93,7 +94,7 @@ public class FahAdapter extends MatchableRVArrayAdapter<HistoryObject, FahAdapte
 
                     AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
 
-                    builder.setPositiveButton("Да", new DialogInterface.OnClickListener() {
+                    builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
                             HistoryObject historyObject = getItem(getAdapterPosition());
                             if (!isHistory)
@@ -103,19 +104,19 @@ public class FahAdapter extends MatchableRVArrayAdapter<HistoryObject, FahAdapte
                             notifyItemRemoved(getAdapterPosition());
                             historyObject.delete();
                         }
-                    }).setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
+                    }).setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int id) {
 
                         }
-                    }).setMessage("Вы уверены, что хотите удалить элемент").create().show();
+                    }).setMessage(R.string.you_sure_delete_element).create().show();
                 }
             });
             itemView.setOnClickListener(this);
         }
 
         @Override
-        public void onClick(View view) {
+        public void onClick(View view) {    //передаем в translaterFragment HistoryObject, чтобы он его отобразил
             Intent responseIntent = new Intent();
             responseIntent
                     .setAction(ACTION_YANDEXAPISERVICE)

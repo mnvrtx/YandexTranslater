@@ -7,7 +7,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class MapUtil {  //сортировшик hashMap
+/**
+ * Сортировшик hashMap
+ */
+public class MapUtil {
     public static <K, V extends Comparable<? super V>> Map<K, V>
     sort(Map<K, V> map )
     {

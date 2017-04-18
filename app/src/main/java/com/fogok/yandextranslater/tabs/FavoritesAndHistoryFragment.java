@@ -21,21 +21,26 @@ import com.fogok.yandextranslater.sugarlitesql.HistoryObject;
 import com.fogok.yandextranslater.tabs.favorites_and_history.Favorites;
 import com.fogok.yandextranslater.tabs.favorites_and_history.FavoritesAndHistoryMain;
 import com.fogok.yandextranslater.tabs.favorites_and_history.History;
+import com.fogok.yandextranslater.utils.Updatable;
 
 import java.util.ArrayList;
 
 import static com.fogok.yandextranslater.TabSelect.TAG;
 
 
-public class FavoritesAndHistoryFragment extends Fragment implements View.OnClickListener {
+public class FavoritesAndHistoryFragment extends Fragment implements View.OnClickListener, Updatable {
 
     private static final String TAB_POSITION = "TAB_POSITION";
-    private FragmentManager thisFragmentManager;
+    private FragmentManager thisFragmentManager = null;
 
     private SectionsPagerAdapter mSectionsPagerAdapter = null;
     private ViewPager mViewPager = null;
     private TabLayout tabLayout = null;
     private ImageButton clearButton;
+
+    public static FavoritesAndHistoryFragment newInstance() {
+        return new FavoritesAndHistoryFragment();
+    }
 
     @Nullable
     @Override
@@ -48,13 +53,12 @@ public class FavoritesAndHistoryFragment extends Fragment implements View.OnClic
 
     private void initAllLayoutVars(View v, Bundle savedInstanceState){
 
-        //
+        //создаём кнопку, которая будет очищать историю
         clearButton = (ImageButton) v.findViewById(R.id.clearButton);
         clearButton.setOnClickListener(this);
 
         // Создаём адаптер, который будет возвращать для viewPager нужный fragment
         thisFragmentManager = getChildFragmentManager();
-        addFragmentsToBundle();    // Добавляем в адаптер все нужные layout
         mSectionsPagerAdapter = new SectionsPagerAdapter(thisFragmentManager);
 
 
@@ -68,8 +72,8 @@ public class FavoritesAndHistoryFragment extends Fragment implements View.OnClic
             }
 
             @Override
-            public void onPageSelected(int position) {
-                ((FavoritesAndHistoryMain)thisFragmentManager.getFragments().get(position)).notifyDataSetChanged();
+            public void onPageSelected(int position) {      //когда выбрана какая-то страница - обновляем её
+                ((Updatable)thisFragmentManager.getFragments().get(position)).updateState();
             }
 
             @Override
@@ -85,32 +89,22 @@ public class FavoritesAndHistoryFragment extends Fragment implements View.OnClic
             tabLayout.getTabAt(savedInstanceState.getInt(TAB_POSITION)).select();
     }
 
-    public void notifyDataSetChanged(){
-        ((FavoritesAndHistoryMain)thisFragmentManager.getFragments().get(tabLayout.getSelectedTabPosition())).notifyDataSetChanged();
-    }
-
-    Bundle argumentsBundle = new Bundle();
-    private void addFragmentsToBundle(){
-//        argumentsBundle.putParcelableArrayList(HISTORY_OBJECTS_KEY, historyObjects);
-//        argumentsBundle.putParcelableArrayList(FAVORITE_OBJECTS_KEY, favoriteObjects);
-    }
-
 
     @Override
     public void onClick(View view) {
         switch (view.getId()){
-            case R.id.clearButton:
+            case R.id.clearButton:  //запускаем диалог, с удалением элементов
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 
-                builder.setPositiveButton("Удалить все элементы", new DialogInterface.OnClickListener() {
+                builder.setPositiveButton(R.string.delete_all, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         TabSelect.getHistoryObjects().clear();
                         TabSelect.getFavoriteObjects().clear();
                         HistoryObject.deleteAll(HistoryObject.class);
-                        notifyDataSetChanged();
+                        updateState();
                     }
-                }).setNegativeButton("Удалить всё, кроме избранного", new DialogInterface.OnClickListener() {
+                }).setNegativeButton(R.string.delete_all_beside_favs, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int id) {
                         ArrayList<HistoryObject> historyObjects = TabSelect.getHistoryObjects();
@@ -122,13 +116,13 @@ public class FavoritesAndHistoryFragment extends Fragment implements View.OnClic
                             }
 
                         }
-                        notifyDataSetChanged();
+                        updateState();
                     }
-                }).setNeutralButton("Отмена", new DialogInterface.OnClickListener() {
+                }).setNeutralButton(R.string.cancel, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
 
                     }
-                }).setMessage("Удаление элементов").create().show();
+                }).setMessage(R.string.delete_title).create().show();
 
 
 
@@ -142,18 +136,23 @@ public class FavoritesAndHistoryFragment extends Fragment implements View.OnClic
         outState.putInt(TAB_POSITION, tabLayout.getSelectedTabPosition());
     }
 
+    @Override
+    public void updateState() {
+        ((Updatable)thisFragmentManager.getFragments().get(tabLayout.getSelectedTabPosition())).updateState();
+    }
+
 
     private class SectionsPagerAdapter extends FragmentStatePagerAdapter {
 
         private static final int countItemsInTabs = 2;
 
-        public SectionsPagerAdapter(FragmentManager manager) {
+        SectionsPagerAdapter(FragmentManager manager) {
             super(manager);
         }
 
         @Override
         public Fragment getItem(int position) {
-            return position == 0 ? History.newInstance(argumentsBundle) : Favorites.newInstance(argumentsBundle);
+            return position == 0 ? History.newInstance() : Favorites.newInstance();
         }
 
         @Override
@@ -163,13 +162,8 @@ public class FavoritesAndHistoryFragment extends Fragment implements View.OnClic
 
         @Override
         public CharSequence getPageTitle(int position) {
-            return position == 0 ? "ИСТОРИЯ" : "ИЗБРАННОЕ";
+            return getResources().getString(position == 0 ? R.string.history_title : R.string.favorites_title);
         }
-
-        //        @SuppressWarnings("unchecked")
-//        public void pageRefresh(int position) {
-//            ((FavoritesAndHistoryMain)mFragmentList.get(position)).notifyDataSetChanged();
-//        }
     }
 
     @Override

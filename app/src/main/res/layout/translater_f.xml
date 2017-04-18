@@ -68,20 +68,20 @@
         android:id="@+id/editText"
         android:layout_width="0dp"
         android:layout_height="160dp"
+        android:layout_marginEnd="16dp"
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:background="@drawable/transl_input"
         android:gravity="top"
         android:padding="3dp"
+        android:scrollbars="vertical"
         android:textAppearance="@style/editText"
-        android:scrollbars = "vertical"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/constraintLayout"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"/>
+        app:layout_constraintTop_toBottomOf="@+id/constraintLayout"/>
 
     <ProgressBar
         android:id="@+id/translateIndicator"
@@ -95,20 +95,21 @@
         app:layout_constraintLeft_toLeftOf="@+id/editText"
         android:layout_marginStart="8dp"/>
 
-    <TextView
-        android:id="@+id/countChars"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginRight="8dp"
-        android:text="0/10000"
-        android:textAppearance="@style/editText"
-        android:shadowColor="@color/shadowColor"
-        android:shadowDx="1"
-        android:shadowDy="1"
-        android:shadowRadius="2"
-        app:layout_constraintBottom_toBottomOf="@+id/editText"
-        app:layout_constraintRight_toRightOf="@+id/editText"/>
+    <ImageButton
+        android:id="@+id/favoriteAddButton"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginRight="0dp"
+        android:layout_marginTop="8dp"
+        android:alpha="0.8"
+        android:paddingBottom="12dp"
+        android:paddingLeft="12dp"
+        android:visibility="invisible"
+        app:layout_constraintLeft_toLeftOf="@+id/clearEditText"
+        app:layout_constraintRight_toRightOf="@+id/clearEditText"
+        app:layout_constraintTop_toBottomOf="@+id/clearEditText"
+        app:srcCompat="@drawable/ic_twotab"/>
 
     <ScrollView
         android:layout_width="0dp"
@@ -121,7 +122,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="@+id/editText"
         app:layout_constraintRight_toRightOf="@+id/editText"
-        app:layout_constraintTop_toBottomOf="@+id/editText">
+        app:layout_constraintTop_toBottomOf="@+id/editText"
+        android:id="@+id/scrollView2">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -145,6 +147,18 @@
                 android:visibility="visible"/>
         </LinearLayout>
     </ScrollView>
+
+    <ImageButton
+        android:id="@+id/clearEditText"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginRight="0dp"
+        android:layout_marginTop="0dp"
+        android:paddingBottom="12dp"
+        android:paddingLeft="12dp"
+        app:layout_constraintRight_toRightOf="@+id/editText"
+        app:layout_constraintTop_toTopOf="@+id/editText"
+        app:srcCompat="@android:drawable/ic_menu_close_clear_cancel"/>
 
 
 </android.support.constraint.ConstraintLayout>

@@ -38,12 +38,12 @@
             <android.support.design.widget.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="История"/>
+                android:text="@string/history_title"/>
 
             <android.support.design.widget.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Избранное"/>
+                android:text="@string/favorites_title"/>
 
         </android.support.design.widget.TabLayout>
 

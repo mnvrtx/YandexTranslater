@@ -16,15 +16,15 @@ import android.widget.EditText;
 
 import com.fogok.yandextranslater.R;
 import com.fogok.yandextranslater.TabSelect;
+import com.fogok.yandextranslater.utils.Updatable;
 
 
-public class FavoritesAndHistoryMain extends Fragment {
-    private RecyclerView recyclerView = null;
-    private FahAdapter fahAdapter = null;
+public class FavoritesAndHistoryMain extends Fragment implements Updatable {
 
     protected EditText searchEditText = null;
     protected boolean isHistory;
-
+    private RecyclerView recyclerView = null;
+    private FahAdapter fahAdapter = null;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -49,14 +49,6 @@ public class FavoritesAndHistoryMain extends Fragment {
         recyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), OrientationHelper.VERTICAL));
         recyclerView.setAdapter(fahAdapter);
 
-
-
-
-
-//        listViewAdapter = new CustomAdapter(getContext(), historyObjects);
-//        listView = (ListView) v.findViewById(R.id.listView);
-//        listView.setAdapter(listViewAdapter);
-
         searchEditText = (EditText) v.findViewById(R.id.searchEditText);
         searchEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -71,13 +63,13 @@ public class FavoritesAndHistoryMain extends Fragment {
 
             @Override
             public void afterTextChanged(Editable editable) {
-//                listViewAdapter.getFilter().filter(editable.toString().toLowerCase());
                 fahAdapter.getFilter().filter(editable.toString().toLowerCase());
             }
         });
     }
 
-    public void notifyDataSetChanged(){
+    @Override
+    public void updateState() {
         fahAdapter.refreshAdapter();
     }
 }

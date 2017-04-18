@@ -8,9 +8,15 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.fogok.yandextranslater.R;
+import com.fogok.yandextranslater.tabs.favorites_and_history.Favorites;
+import com.fogok.yandextranslater.utils.Updatable;
 
 
-public class SettingsFragment extends Fragment {
+public class SettingsFragment extends Fragment implements Updatable {
+
+    public static SettingsFragment newInstance() {
+        return new SettingsFragment();
+    }
 
     @Nullable
     @Override
@@ -18,5 +24,10 @@ public class SettingsFragment extends Fragment {
         View rootView =
                 inflater.inflate(R.layout.settings_f, container, false);
         return rootView;
+    }
+
+    @Override
+    public void updateState() {
+
     }
 }

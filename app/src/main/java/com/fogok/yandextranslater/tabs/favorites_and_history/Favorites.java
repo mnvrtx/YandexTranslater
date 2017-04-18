@@ -7,10 +7,8 @@ import android.view.ViewGroup;
 
 public class Favorites extends FavoritesAndHistoryMain {
 
-    public static Favorites newInstance(Bundle bundle) {
-        Favorites pageFragment = new Favorites();
-        pageFragment.setArguments(bundle);
-        return pageFragment;
+    public static Favorites newInstance() {
+        return new Favorites();
     }
 
     @Override

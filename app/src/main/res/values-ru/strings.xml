@@ -1,0 +1,16 @@
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="app_name">Яндекс.Переводчик</string>
+    <!--FavoritesAndHistoryFragment-->
+    <string name="favorites_title">ИЗБРАННОЕ</string>
+    <string name="history_title">ИСТОРИЯ</string>
+    <string name="delete_title">Удаление элементов</string>
+    <string name="delete_all">Удалить все элементы</string>
+    <string name="delete_all_beside_favs">Удалить всё, кроме избранного</string>
+    <string name="cancel">Отмена</string>
+    <!--FavoritesAndHistoryFragment-->
+
+    <!--FahAdapter-->
+    <string name="you_sure_delete_element">Вы уверены, что хотите удалить элемент</string>
+    <string name="yes">Да</string>
+    <!--FahAdapter-->
+</resources>

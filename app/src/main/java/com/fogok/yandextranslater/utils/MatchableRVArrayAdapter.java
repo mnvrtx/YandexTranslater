@@ -11,8 +11,13 @@ import java.util.ArrayList;
 
 public abstract class MatchableRVArrayAdapter<T, VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> implements Filterable {
 
-    protected ArrayList<T> mFilteringObjects;
-    private ArrayList<T> mOriginalObjects;
+
+    /**
+     * Специальный класс, наследуемый от RecyclerView.Adapter, который позволяет делать поиск элементов с помощью класса Filter
+     */
+
+    protected ArrayList<T> mFilteringObjects;   //отображаемые объекты
+    private ArrayList<T> mOriginalObjects;  //все объекты
 
     private int mResource;
 
@@ -85,15 +90,26 @@ public abstract class MatchableRVArrayAdapter<T, VH extends RecyclerView.ViewHol
         return mFilter;
     }
 
+    private boolean matches(T value, String lowerCasePrefix) {
+        if (value instanceof Matchable) {
+            return ((Matchable) value).matches(lowerCasePrefix);
+        }
+        return value.toString().toLowerCase().contains(lowerCasePrefix);
+    }
+
+    public interface Matchable {
+        boolean matches(String lowerCasePrefix);
+    }
+
     private class ArrayFilter extends Filter {
         @Override
         protected FilterResults performFiltering(CharSequence prefix) {
             FilterResults results = new FilterResults();
 
             ArrayList<T> values;
-            if (prefix == null || prefix.length() == 0) {
+            if (prefix == null || prefix.length() == 0) {   //если строка пустая - значит отображаем все элементы
                 values = new ArrayList<>(mOriginalObjects);
-            } else {
+            } else {                                        //иначе фильтруем всё
                 String prefixString = prefix.toString().toLowerCase();
                 values = new ArrayList<>();
 
@@ -117,16 +133,5 @@ public abstract class MatchableRVArrayAdapter<T, VH extends RecyclerView.ViewHol
             mFilteringObjects = new ArrayList<T>((ArrayList<T>) results.values);
             notifyDataSetChanged();
         }
-    }
-
-    private boolean matches(T value, String lowerCasePrefix) {
-        if (value instanceof Matchable) {
-            return ((Matchable) value).matches(lowerCasePrefix);
-        }
-        return value.toString().toLowerCase().contains(lowerCasePrefix);
-    }
-
-    public interface Matchable {
-        boolean matches(String lowerCasePrefix);
     }
 }

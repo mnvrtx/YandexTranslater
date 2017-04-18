@@ -19,7 +19,6 @@
 
         <activity
             android:name=".TabSelect"
-            android:label="@string/title_activity_tab_select"
             android:theme="@style/AppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

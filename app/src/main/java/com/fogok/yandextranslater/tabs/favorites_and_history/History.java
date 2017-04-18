@@ -8,10 +8,8 @@ import android.view.ViewGroup;
 
 public class History extends FavoritesAndHistoryMain {
 
-    public static History newInstance(Bundle bundle) {
-        History pageFragment = new History();
-        pageFragment.setArguments(bundle);
-        return pageFragment;
+    public static History newInstance() {
+        return new History();
     }
 
     @Override
