@@ -22,9 +22,9 @@ import com.fogok.yandextranslater.utils.Updatable;
 public class FavoritesAndHistoryMain extends Fragment implements Updatable {
 
     protected EditText searchEditText = null;
-    protected boolean isHistory;
     private RecyclerView recyclerView = null;
     private FahAdapter fahAdapter = null;
+    protected boolean isHistory;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -52,14 +52,10 @@ public class FavoritesAndHistoryMain extends Fragment implements Updatable {
         searchEditText = (EditText) v.findViewById(R.id.searchEditText);
         searchEditText.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
 
             @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
 
             @Override
             public void afterTextChanged(Editable editable) {

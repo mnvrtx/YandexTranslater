@@ -8,7 +8,6 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
 import android.text.Editable;
 import android.text.Html;
 import android.text.Spannable;
@@ -23,7 +22,6 @@ import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -32,7 +30,6 @@ import com.fogok.yandextranslater.R;
 import com.fogok.yandextranslater.TabSelect;
 import com.fogok.yandextranslater.services.YandexApiService;
 import com.fogok.yandextranslater.sugarlitesql.HistoryObject;
-import com.fogok.yandextranslater.tabs.favorites_and_history.Favorites;
 import com.fogok.yandextranslater.utils.MapUtil;
 import com.fogok.yandextranslater.utils.Updatable;
 
@@ -65,7 +62,6 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
     private TextView textOut = null, secondTextOut = null;
     private ProgressBar translateIndicator = null;
     private Spinner fromLangSpinner = null, toLangSpinner = null;
-    private ImageButton favoriteAddButton;
     //endregion
 
     private final String TAG = "TranslateFragmentLog";
@@ -75,7 +71,7 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
     private ArrayList<String> langsDictPossible = new ArrayList<>();
     private ArrayList<String> spinnerDataLangs = new ArrayList<>();
     private TranslateResponseReceiver translateResponseReceiver = null;
-    private HistoryObject currentHistoryObject = null;
+    private HistoryObject currentHistoryObject;
     private boolean lockFirstActivate;
     private int lastFromSpinnerSelect, lastToSpinnerSelect;
     private String finalStringTranlate;
@@ -169,9 +165,7 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
                 Log.d(TAG, "spinnerItemSelect");
             }
             @Override
-            public void onNothingSelected(AdapterView<?> adapterView) {
-
-            }
+            public void onNothingSelected(AdapterView<?> adapterView) {}
         });
 
         toLangSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -184,15 +178,11 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
                 Log.d(TAG, "spinnerItemSelect");
             }
             @Override
-            public void onNothingSelected(AdapterView<?> adapterView) {
-
-            }
+            public void onNothingSelected(AdapterView<?> adapterView) {}
         });
 
-        //ставим обработчик событий для кнопки очистки editText, а так же инициализируем кнопку "добавить в избранное"
+        //ставим обработчик событий для кнопки очистки editText
         (v.findViewById(R.id.clearEditText)).setOnClickListener(this);
-        favoriteAddButton = (ImageButton) v.findViewById(R.id.favoriteAddButton);
-        favoriteAddButton.setOnClickListener(this);
 
         //инициализируем поле для ввода фразы перевода и ставим в метод изменения текста (afterTextChanged) запуск процесса перевода
         textEdit = (EditText) v.findViewById(R.id.editText);
@@ -207,7 +197,6 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
 
             @Override
             public void afterTextChanged(Editable editable) {
-                favoriteAddButton.setVisibility(View.INVISIBLE);
                 textOut.setText("");
                 secondTextOut.setText("");
                 if (!lockFirstActivate && !textEdit.getText().toString().replace(" ", "").equals("")){
@@ -230,13 +219,9 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
                 }
             }
             @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
             @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
         });
 
         //инициализируем textView, в котором будет перевод
@@ -274,23 +259,7 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
             case R.id.clearEditText:
                 textEdit.setText("");
                 break;
-            case R.id.favoriteAddButton:    //Добавляем/убираем объект из избранного
-                currentHistoryObject.reversFavorite();
-                currentHistoryObject.save();
-                refreshFavoriteAddButton();
-                break;
         }
-    }
-
-    /**
-     * Обновляем состояние кнопки добавления в избранное
-     */
-    private void refreshFavoriteAddButton(){
-        if (currentHistoryObject != null){
-            favoriteAddButton.setColorFilter(ContextCompat.getColor(getContext(), currentHistoryObject.isFavorite() ? R.color.colorAccent : R.color.black));
-            favoriteAddButton.setVisibility(View.VISIBLE);
-        }else
-            favoriteAddButton.setVisibility(View.INVISIBLE);
     }
 
     /**
@@ -311,7 +280,6 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
                     .putExtra(YandexApiService.LANG_STR_DIRECTION, finalStringTranlate)
                     .putExtra(YandexApiService.TARGET_TEXT_STR, textEdit.getText().toString()));  //запускаем процесс перевода и доп. вар. перевода
         }
-
     }
 
 
@@ -418,7 +386,7 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
 
     @Override
     public void updateState() {
-        refreshFavoriteAddButton();
+
     }
 
 
@@ -455,9 +423,6 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
                     lastToSpinnerSelect = toIndex;
                     toLangSpinner.setSelection(toIndex);
 
-                    currentHistoryObject = openedHistoryObject;
-                    refreshFavoriteAddButton();
-
                     ((TabSelect) getActivity()).getTabLayout().getTabAt(0).select();
                     //endregion
                     break;
@@ -485,49 +450,54 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
                     break;
                 case GET_LANGUAGES_TO_DICT_IS_POSSIBLE:
                     //region Возвращаем доступные языки для доп. вариантов перевода
-                    try {
-                        JSONArray jsonArray = new JSONArray(result);
-                        langsDictPossible = new ArrayList<>(jsonArray.length());
-                        for (int i = 0; i < jsonArray.length(); i++) {
-                            langsDictPossible.add(jsonArray.get(i).toString());
+                    if (!result.equals("")){
+                        try {
+                            JSONArray jsonArray = new JSONArray(result);
+                            langsDictPossible = new ArrayList<>(jsonArray.length());
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                langsDictPossible.add(jsonArray.get(i).toString());
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
                         }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
+                    }else
+                        requestLangsList();
                     //endregion
                     break;
                 case GET_LANGUAGES_TO_TRANSLATE_IS_POSSIBLE:
                     //region Получаем данные доступных языков для перевода
-                    try {
-                        JSONObject jsonObject = new JSONObject(result);
-                        jsonObject = jsonObject.getJSONObject("langs");
-                        langsTranslatePossible = new HashMap<>(jsonObject.length());
-                        for (Iterator<String> iter = jsonObject.keys(); iter.hasNext(); ) {
-                            String key = iter.next();
-                            langsTranslatePossible.put(jsonObject.getString(key), key);  ///прим.: key - Русский, val - ru
+                    if (!result.equals("")){
+                        try {
+                            JSONObject jsonObject = new JSONObject(result);
+                            jsonObject = jsonObject.getJSONObject("langs");
+                            langsTranslatePossible = new HashMap<>(jsonObject.length());
+                            for (Iterator<String> iter = jsonObject.keys(); iter.hasNext(); ) {
+                                String key = iter.next();
+                                langsTranslatePossible.put(jsonObject.getString(key), key);  ///прим.: key - Русский, val - ru
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
                         }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+
+
+                        //сортируем и ставим эти данные в спиннеры
+
+                        //сортировка
+                        langsTranslatePossible = (HashMap<String, String>) MapUtil.sort(langsTranslatePossible);
+                        spinnerDataLangs.addAll(langsTranslatePossible.keySet());    //добавляем в лист(spinnerDataLangs) все языки
+
+                        int ffromIndex = new ArrayList<>(langsTranslatePossible.values()).indexOf("en");   //изначально выбранный язык с которого будет перевод
+                        int ttoIndex = new ArrayList<>(langsTranslatePossible.values()).indexOf("ru");   //изначально выбранный язык на который будет перевод
+
+                        //вставка
+                        fromLangAdapter.notifyDataSetChanged();
+                        lastFromSpinnerSelect = ffromIndex;
+                        fromLangSpinner.setSelection(ffromIndex);
+
+                        toLangAdapter.notifyDataSetChanged();
+                        lastToSpinnerSelect = ttoIndex;
+                        toLangSpinner.setSelection(ttoIndex);
                     }
-
-
-                    //сортируем и ставим эти данные в спиннеры
-
-                    //сортировка
-                    langsTranslatePossible = (HashMap<String, String>) MapUtil.sort(langsTranslatePossible);
-                    spinnerDataLangs.addAll(langsTranslatePossible.keySet());    //добавляем в лист(spinnerDataLangs) все языки
-
-                    int ffromIndex = new ArrayList<>(langsTranslatePossible.values()).indexOf("en");   //изначально выбранный язык с которого будет перевод
-                    int ttoIndex = new ArrayList<>(langsTranslatePossible.values()).indexOf("ru");   //изначально выбранный язык на который будет перевод
-
-                    //вставка
-                    fromLangAdapter.notifyDataSetChanged();
-                    lastFromSpinnerSelect = ffromIndex;
-                    fromLangSpinner.setSelection(ffromIndex);
-
-                    toLangAdapter.notifyDataSetChanged();
-                    lastToSpinnerSelect = ttoIndex;
-                    toLangSpinner.setSelection(ttoIndex);
                     //endregion
                     break;
                 case GET_TRANSLATE_RESPONSE:
@@ -536,9 +506,8 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
                     textOut.setText(result.trim());     //trim - обрезаем лишние пробелы
                     secondTextOut.setText("");  ///обновляем доп. вар. перевода
 
-
                     HistoryObject historyObject = new HistoryObject(
-                            "0",
+                            HistoryObject.NOFAVORITE,
                             textEdit.getText().toString(),
                             textOut.getText().toString(),
                             "",
@@ -549,7 +518,6 @@ public class TranslaterFragment extends Fragment implements View.OnClickListener
                     TabSelect.getHistoryObjects().add(historyObject);
 
                     currentHistoryObject = historyObject;
-                    refreshFavoriteAddButton();
                     //endregion
                     break;
             }

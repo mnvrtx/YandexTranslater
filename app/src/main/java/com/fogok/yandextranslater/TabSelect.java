@@ -1,5 +1,8 @@
 package com.fogok.yandextranslater;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -10,6 +13,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.fogok.yandextranslater.sugarlitesql.HistoryObject;
 import com.fogok.yandextranslater.tabs.FavoritesAndHistoryFragment;
@@ -37,6 +41,11 @@ public class TabSelect extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tab_select);
         Log.d(TAG, "onCreate");
+
+        if (!isInternetWorking()){
+            Toast.makeText(this, R.string.requiredNet, Toast.LENGTH_LONG).show();
+            finish();
+        }
 
         // Создаём адаптер, который будет возвращать для viewPager нужный fragment
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
@@ -91,6 +100,13 @@ public class TabSelect extends AppCompatActivity {
 
     public TabLayout getTabLayout() {
         return tabLayout;
+    }
+
+    public boolean isInternetWorking() {
+        ConnectivityManager cm =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnectedOrConnecting();
     }
 
 

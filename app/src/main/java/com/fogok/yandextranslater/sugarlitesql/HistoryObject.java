@@ -12,6 +12,8 @@ import com.orm.SugarRecord;
 
 public class HistoryObject extends SugarRecord implements Parcelable, MatchableRVArrayAdapter.Matchable {
 
+    public static String NOFAVORITE = "0", ISFAVORITE = "1";
+
     private String isFavorite;
     private String fromLangText;
     private String toLangText;
@@ -34,7 +36,7 @@ public class HistoryObject extends SugarRecord implements Parcelable, MatchableR
     }
 
     public boolean isFavorite() {
-        return isFavorite.equals("1");
+        return isFavorite.equals(ISFAVORITE);
     }
 
     public String getFromLangText() {
@@ -54,7 +56,7 @@ public class HistoryObject extends SugarRecord implements Parcelable, MatchableR
     }
 
     public void reversFavorite(){
-        isFavorite = isFavorite.equals("0") ? "1" : "0";
+        isFavorite = isFavorite.equals(NOFAVORITE) ? ISFAVORITE : NOFAVORITE;
     }
 
     @Override

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Яндекс.Переводчик</string>
+    <string name="requiredNet">Это приложение требует наличия подключения интернет</string>
     <string name="cancel">Отмена</string>
     <string name="delete_all">Удалить все элементы</string>
     <string name="delete_all_beside_favs">Удалить всё, кроме избранного</string>

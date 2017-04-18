@@ -25,7 +25,7 @@ public class YandexApiService extends IntentService {
 
     public static final String ACTION_YANDEXAPISERVICE = "com.fogok.yandextranslater.RESPONSE"; //имя действия для broadcast receiver
     public static final String EXTRA_KEY_RESPONSE = "EXTRA_RESPONSE";     //ключ для данных, передаваемых через broadcast receiver
-    public static final String ERROR_POST_REQUEST = "ERROR_POST_REQUEST";   //в случае ошибки будет возвращён этот текст
+    public static final String ERROR_POST_REQUEST = "";   //в случае ошибки будет возвращёна пустая строка
 
     public static final String REQUEST_ACTION = "REQUEST_ACTION";    //при запросе через putExtra мы указываем, какое именно действие совершать
 
@@ -201,6 +201,7 @@ public class YandexApiService extends IntentService {
             conn = (HttpURLConnection) url.openConnection();    //открываем подключение
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
+            conn.setConnectTimeout(3000);
             conn.setDoInput(true);
 
             conn.setRequestProperty("Content-Length", "" + Integer.toString(params.getBytes().length));
